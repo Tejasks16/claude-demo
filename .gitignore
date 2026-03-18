@@ -1,0 +1,176 @@
+# .gitignore - Files and directories to exclude from version control
+
+# ============================================================================
+# Terraform Files
+# ============================================================================
+
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files, which may contain sensitive data
+# You can override this with negated patterns for specific files
+*.tfvars
+*.tfvars.json
+
+# But include the template files
+!environments/*/terraform.tfvars.example
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# ============================================================================
+# Terraform Lock File
+# ============================================================================
+
+# Include lock file in version control to ensure consistent provider versions
+# Uncomment the line below if you want to ignore it
+# .terraform.lock.hcl
+
+# ============================================================================
+# Sensitive Files
+# ============================================================================
+
+# AWS credentials
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Kubeconfig files
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+
+# SSH keys
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (IntelliJ, PyCharm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# OS Files
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.Trash-*
+.directory
+
+# ============================================================================
+# Backup and Temporary Files
+# ============================================================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# ============================================================================
+# Tools and Utilities
+# ============================================================================
+
+# Terraform docs
+.terraform-docs.yml
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# tflint
+.tflint.hcl
+
+# Checkov
+.checkov.yml
+
+# Trivy
+.trivyignore
+
+# ============================================================================
+# Project-Specific
+# ============================================================================
+
+# Terraform plan files
+*.tfplan
+*.tfplan.json
+plan.out
+plan.json
+
+# Module cache
+.terraform.modules/
+
+# Testing
+.test/
+test-results/
+
+# Documentation builds
+docs/_build/
+site/
