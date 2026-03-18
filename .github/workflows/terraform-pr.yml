@@ -328,45 +328,73 @@ jobs:
             });
 
   # ============================================================================
-  # Job 3: Claude AI Code Review (Optional)
+  # Job 3: Claude AI Code Review
   # ============================================================================
   claude-review:
     name: Claude AI Code Review
     runs-on: ubuntu-latest
     needs: plan
-    if: ${{ false }}  # Set to true to enable Claude review
+    if: github.event_name == 'pull_request' && needs.plan.result == 'success'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Claude Code Review
-        id: claude
-        run: |
-          # This is a placeholder for Claude AI review integration
-          # You can integrate with Anthropic's Claude API here
-          echo "Claude AI review would run here"
-          echo "Review the Terraform changes for:"
-          echo "- Security best practices"
-          echo "- AWS Well-Architected compliance"
-          echo "- Cost optimization opportunities"
-          echo "- Potential issues or improvements"
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
 
-      - name: Post Claude Review
+      - name: Run Claude AI Code Review
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: bash .github/scripts/claude-review.sh tfplan.txt claude-review.md
+
+      - name: Post Claude Review as PR Comment
         uses: actions/github-script@v7
         if: always()
         with:
           script: |
-            const output = `#### Claude AI Code Review 🤖
+            const fs = require('fs');
+            const MARKER = '<!-- claude-review-comment -->';
 
-            Claude AI review integration is currently disabled.
+            // Delete previous Claude review comments
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            for (const comment of comments.data) {
+              if (comment.body.includes(MARKER)) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id
+                });
+              }
+            }
 
-            To enable:
-            1. Set up Anthropic API key as GitHub secret
-            2. Enable this job by changing \`if: ${{ '{{' }} false {{ '}}' }}\` to \`if: ${{ '{{' }} true {{ '}}' }}\`
-            3. Implement Claude API integration
+            let reviewContent = 'Review not available.';
+            try {
+              if (fs.existsSync('claude-review.md')) {
+                reviewContent = fs.readFileSync('claude-review.md', 'utf8').trim();
+              }
+            } catch (error) {
+              reviewContent = `Error reading review: ${error.message}`;
+            }
 
-            *This feature requires additional setup.*`;
+            const output = [
+              MARKER,
+              '#### Claude AI Code Review 🤖',
+              '',
+              reviewContent,
+              '',
+              '---',
+              '*Reviewed by [Claude](https://claude.ai) (`claude-opus-4-6`) with adaptive thinking*',
+              `*Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*`
+            ].join('\n');
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
