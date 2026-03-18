@@ -6,9 +6,6 @@
 
 data "aws_caller_identity" "current" {}
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
 
 # ============================================================================
 # KMS Key for EKS Cluster Encryption
@@ -55,10 +52,10 @@ module "vpc" {
   enable_dns_support   = true
 
   # VPC Flow Logs for network traffic monitoring
-  enable_flow_log                      = true
-  create_flow_log_cloudwatch_iam_role  = true
-  create_flow_log_cloudwatch_log_group = true
-  flow_log_retention_in_days           = var.cloudwatch_log_retention_days
+  enable_flow_log                                 = true
+  create_flow_log_cloudwatch_iam_role             = true
+  create_flow_log_cloudwatch_log_group            = true
+  flow_log_cloudwatch_log_group_retention_in_days = var.cloudwatch_log_retention_days
 
   # Kubernetes-specific tags for subnet discovery
   public_subnet_tags = {
@@ -147,7 +144,7 @@ module "ebs_csi_irsa_role" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
+  version = "~> 20.0"
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -158,8 +155,8 @@ module "eks" {
   control_plane_subnet_ids = module.vpc.private_subnets
 
   # Cluster endpoint access
-  cluster_endpoint_private_access = var.cluster_endpoint_private_access
-  cluster_endpoint_public_access  = var.cluster_endpoint_public_access
+  cluster_endpoint_private_access      = var.cluster_endpoint_private_access
+  cluster_endpoint_public_access       = var.cluster_endpoint_public_access
   cluster_endpoint_public_access_cidrs = var.cluster_endpoint_public_access_cidrs
 
   # Encryption configuration
@@ -201,8 +198,8 @@ module "eks" {
       service_account_role_arn = module.vpc_cni_irsa_role.iam_role_arn
       configuration_values = jsonencode({
         env = {
-          ENABLE_PREFIX_DELEGATION = "true"
-          ENABLE_POD_ENI           = "true"
+          ENABLE_PREFIX_DELEGATION          = "true"
+          ENABLE_POD_ENI                    = "true"
           POD_SECURITY_GROUP_ENFORCING_MODE = "standard"
         }
       })
@@ -235,7 +232,7 @@ module "eks" {
     # Metadata options for enhanced security
     metadata_options = {
       http_endpoint               = "enabled"
-      http_tokens                 = "required"  # Enforce IMDSv2
+      http_tokens                 = "required" # Enforce IMDSv2
       http_put_response_hop_limit = 1
       instance_metadata_tags      = "enabled"
     }

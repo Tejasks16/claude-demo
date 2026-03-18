@@ -1,0 +1,144 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: 'Type "destroy" to confirm deletion of all resources'
+        required: true
+        type: string
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+
+concurrency:
+  group: terraform-apply
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.11.3
+
+jobs:
+  destroy:
+    name: Destroy Infrastructure
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Validate confirmation
+        if: github.event.inputs.confirm_destroy != 'destroy'
+        run: |
+          echo "❌ Confirmation failed. You must type 'destroy' to proceed."
+          exit 1
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-TerraformDestroy-${{ github.run_id }}
+          role-duration-seconds: 3600
+
+      - name: Verify AWS Identity
+        run: |
+          echo "Account ID: $(aws sts get-caller-identity --query Account --output text)"
+          echo "User ARN:   $(aws sts get-caller-identity --query Arn --output text)"
+          echo "Region:     ${{ env.AWS_REGION }}"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan Destroy
+        id: plan
+        run: |
+          terraform plan \
+            -destroy \
+            -var-file="environments/${{ github.event.inputs.environment }}/terraform.tfvars" \
+            -out=tfplan-destroy \
+            -no-color | tee plan-output.txt
+
+          PLAN_SUMMARY=$(grep -E "Plan:|No changes" plan-output.txt || echo "Unable to parse plan")
+          echo "summary=$PLAN_SUMMARY"
+
+      - name: Upload Destroy Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-destroy-plan
+          path: |
+            tfplan-destroy
+            plan-output.txt
+          retention-days: 7
+
+      - name: Terraform Destroy
+        id: destroy
+        run: |
+          echo "🔥 Destroying infrastructure for environment: ${{ github.event.inputs.environment }}"
+          echo "Triggered by: ${{ github.actor }} | Run: ${{ github.run_id }}"
+
+          terraform apply \
+            -auto-approve \
+            -no-color \
+            tfplan-destroy | tee destroy-output.txt
+
+          echo "✅ Terraform Destroy completed"
+
+      - name: Upload Destroy Output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-destroy-output
+          path: destroy-output.txt
+          retention-days: 30
+
+      - name: Create Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Terraform Destroy Failed',
+              body: `## Destroy Failure Alert
+
+            The Terraform destroy workflow failed.
+
+            **Details:**
+            - **Workflow Run**: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - **Environment**: ${{ github.event.inputs.environment }}
+            - **Triggered by**: @${{ github.actor }}
+            - **Timestamp**: ${new Date().toISOString()}
+
+            **Steps Status:**
+            - Plan: \`${{ steps.plan.outcome }}\`
+            - Destroy: \`${{ steps.destroy.outcome }}\`
+
+            **Action Required:**
+            1. Review the workflow logs
+            2. Check for resources that may require manual cleanup
+            3. Verify IAM permissions
+
+            ---
+            *This issue was automatically created by GitHub Actions*`,
+              labels: ['terraform', 'destroy-failure', 'urgent']
+            });
