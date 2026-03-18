@@ -229,11 +229,6 @@ variable "enable_ebs_csi_driver" {
   default     = true
 }
 
-variable "enable_efs_csi_driver" {
-  description = "Enable EFS CSI driver addon"
-  type        = bool
-  default     = false
-}
 
 # ============================================================================
 # Security Configuration
@@ -267,8 +262,3 @@ variable "enable_cloudwatch_metrics" {
   default     = true
 }
 
-variable "enable_prometheus" {
-  description = "Enable Prometheus monitoring"
-  type        = bool
-  default     = false
-}
