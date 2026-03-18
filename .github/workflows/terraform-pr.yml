@@ -110,6 +110,24 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const MARKER = '<!-- terraform-validation-comment -->';
+
+            // Delete previous validation comments
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            for (const comment of comments.data) {
+              if (comment.body.includes(MARKER)) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id
+                });
+              }
+            }
 
             // Read Trivy report if exists
             let trivyReport = 'Trivy scan completed. Check artifacts for detailed report.';
@@ -121,28 +139,31 @@ jobs:
               console.log('Could not read Trivy report:', error);
             }
 
-            const output = `#### Terraform Validation Results 🔍
-
-            | Check | Status |
-            |-------|--------|
-            | 🎨 Format | \`${{ steps.fmt.outcome }}\` |
-            | ⚙️ Init | \`${{ steps.init.outcome }}\` |
-            | ✅ Validate | \`${{ steps.validate.outcome }}\` |
-            | 🔍 TFLint | \`${{ steps.tflint.outcome }}\` |
-            | 🛡️ Trivy | \`${{ steps.trivy.outcome }}\` |
-
-            <details><summary>Show Trivy Security Scan Results</summary>
-
-            \`\`\`
-            ${trivyReport.substring(0, 60000)}
-            \`\`\`
-
-            </details>
-
-            **Note**: Full Trivy report available in workflow artifacts.
-
-            *Pushed by: @${{ github.actor }}*
-            *Action: \`${{ github.event_name }}\`*`;
+            const output = [
+              MARKER,
+              '#### Terraform Validation Results 🔍',
+              '',
+              '| Check | Status |',
+              '|-------|--------|',
+              '| 🎨 Format | `${{ steps.fmt.outcome }}` |',
+              '| ⚙️ Init | `${{ steps.init.outcome }}` |',
+              '| ✅ Validate | `${{ steps.validate.outcome }}` |',
+              '| 🔍 TFLint | `${{ steps.tflint.outcome }}` |',
+              '| 🛡️ Trivy | `${{ steps.trivy.outcome }}` |',
+              '',
+              '<details><summary>Show Trivy Security Scan Results</summary>',
+              '',
+              '```',
+              trivyReport.substring(0, 60000),
+              '```',
+              '',
+              '</details>',
+              '',
+              '**Note**: Full Trivy report available in workflow artifacts.',
+              '',
+              '*Pushed by: @${{ github.actor }}*',
+              '*Action: `${{ github.event_name }}`*'
+            ].join('\n');
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -238,45 +259,66 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const MARKER = '<!-- terraform-plan-comment -->';
+
+            // Delete previous plan comments
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            for (const comment of comments.data) {
+              if (comment.body.includes(MARKER)) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id
+                });
+              }
+            }
+
             const plan = fs.readFileSync('tfplan.txt', 'utf8');
             const planSummary = `${{ steps.plan_summary.outputs.summary }}`;
             const drift = '${{ steps.drift.outputs.drift }}' === 'true';
 
-            // Truncate plan if too long (GitHub comment limit is ~65k chars)
             const maxLength = 60000;
             const truncatedPlan = plan.length > maxLength
               ? plan.substring(0, maxLength) + '\n\n... (truncated, see artifacts for full plan)'
               : plan;
 
-            const output = `#### Terraform Plan Results 📊
-
-            **Drift Detection**: ${drift ? '⚠️ Infrastructure drift detected' : '✅ No drift detected'}
-
-            **Plan Summary**:
-            \`\`\`
-            ${planSummary}
-            \`\`\`
-
-            <details><summary>Show Full Plan Output</summary>
-
-            \`\`\`terraform
-            ${truncatedPlan}
-            \`\`\`
-
-            </details>
-
-            **Plan Status**: \`${{ steps.plan.outcome }}\`
-
-            ---
-
-            **Next Steps**:
-            - Review the plan carefully
-            - Check for any unexpected changes
-            - If approved, merge this PR to auto-apply changes
-
-            *Pushed by: @${{ github.actor }}*
-            *Workflow: \`${{ github.workflow }}\`*
-            *Run ID: \`${{ github.run_id }}\`*`;
+            const output = [
+              MARKER,
+              '#### Terraform Plan Results 📊',
+              '',
+              `**Drift Detection**: ${drift ? '⚠️ Infrastructure drift detected' : '✅ No drift detected'}`,
+              '',
+              '**Plan Summary**:',
+              '```',
+              planSummary,
+              '```',
+              '',
+              '<details><summary>Show Full Plan Output</summary>',
+              '',
+              '```terraform',
+              truncatedPlan,
+              '```',
+              '',
+              '</details>',
+              '',
+              '**Plan Status**: `${{ steps.plan.outcome }}`',
+              '',
+              '---',
+              '',
+              '**Next Steps**:',
+              '- Review the plan carefully',
+              '- Check for any unexpected changes',
+              '- If approved, merge this PR to auto-apply changes',
+              '',
+              '*Pushed by: @${{ github.actor }}*',
+              '*Workflow: `${{ github.workflow }}`*',
+              '*Run ID: `${{ github.run_id }}`*'
+            ].join('\n');
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
