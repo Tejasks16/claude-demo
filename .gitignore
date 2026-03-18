@@ -20,8 +20,9 @@ crash.*.log
 *.tfvars
 *.tfvars.json
 
-# But include the template files
+# But include the template files and environment-specific tfvars
 !environments/*/terraform.tfvars.example
+!environments/*/terraform.tfvars
 
 # Ignore override files as they are usually used to override resources locally
 override.tf
