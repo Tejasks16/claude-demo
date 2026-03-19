@@ -34,8 +34,8 @@ output "nat_gateway_ips" {
 # ============================================================================
 
 output "cluster_id" {
-  description = "The ID of the EKS cluster"
-  value       = module.eks.cluster_id
+  description = "The ID of the EKS cluster (same as cluster name in EKS)"
+  value       = module.eks.cluster_name
 }
 
 output "cluster_name" {
