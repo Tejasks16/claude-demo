@@ -53,7 +53,7 @@ node_group_name     = "main"
 node_instance_types = ["m5.large"]
 node_disk_size      = 50
 node_disk_type      = "gp3"
-node_ami_type       = "AL2_x86_64"
+node_ami_type       = "AL2023_x86_64_STANDARD"
 node_capacity_type  = "ON_DEMAND" # Use "SPOT" for cost savings in dev
 
 # Auto-scaling configuration
