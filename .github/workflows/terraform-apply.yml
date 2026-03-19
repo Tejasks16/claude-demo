@@ -72,6 +72,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
+          set -o pipefail
           echo "📋 Generating Terraform Plan"
           terraform plan \
             -var-file="environments/dev/terraform.tfvars" \
@@ -98,8 +99,9 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        if: steps.analyze.outputs.has_changes == 'true'
+        if: steps.plan.outcome == 'success' && steps.analyze.outputs.has_changes == 'true'
         run: |
+          set -o pipefail
           echo "🚀 Applying Terraform Changes"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -117,14 +119,14 @@ jobs:
         run: |
           echo "📤 Extracting Terraform Outputs"
 
-          # Get all outputs in JSON format
-          terraform output -json > outputs.json
+          # Get all outputs in JSON format (suppress warnings on empty state)
+          terraform output -json 2>/dev/null > outputs.json || echo '{}' > outputs.json
 
-          # Extract key outputs
-          CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || echo "N/A")
-          CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint 2>/dev/null || echo "N/A")
-          VPC_ID=$(terraform output -raw vpc_id 2>/dev/null || echo "N/A")
-          CONFIGURE_KUBECTL=$(terraform output -raw configure_kubectl 2>/dev/null || echo "N/A")
+          # Extract key outputs - capture only stdout, fall back to N/A on error
+          CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null) || CLUSTER_NAME="N/A"
+          CLUSTER_ENDPOINT=$(terraform output -raw cluster_endpoint 2>/dev/null) || CLUSTER_ENDPOINT="N/A"
+          VPC_ID=$(terraform output -raw vpc_id 2>/dev/null) || VPC_ID="N/A"
+          CONFIGURE_KUBECTL=$(terraform output -raw configure_kubectl 2>/dev/null) || CONFIGURE_KUBECTL="N/A"
 
           echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
           echo "cluster_endpoint=$CLUSTER_ENDPOINT" >> $GITHUB_OUTPUT

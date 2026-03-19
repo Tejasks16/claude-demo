@@ -251,6 +251,10 @@ module "eks" {
       name            = "${var.cluster_name}-${var.node_group_name}"
       use_name_prefix = true
 
+      # Explicit short IAM role name to stay within AWS 38-char name_prefix limit
+      iam_role_name            = "${var.cluster_name}-ng-${var.node_group_name}"
+      iam_role_use_name_prefix = true
+
       # Node group sizing
       min_size     = var.node_min_capacity
       max_size     = var.node_max_capacity
