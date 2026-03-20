@@ -237,6 +237,19 @@ module "eks" {
   # Grant the IAM identity that creates the cluster admin access
   enable_cluster_creator_admin_permissions = true
 
+  # Access entries for local admin access
+  access_entries = {
+    tejas = {
+      principal_arn = "arn:aws:iam::271807748029:user/tejas"
+      policy_associations = {
+        admin = {
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = { type = "cluster" }
+        }
+      }
+    }
+  }
+
   # IRSA (IAM Roles for Service Accounts)
   enable_irsa = var.enable_irsa
 
