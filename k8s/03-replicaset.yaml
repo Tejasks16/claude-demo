@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: demo-rs
+  namespace: demo
+  labels:
+    app: demo
+    tier: replicaset
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo
+      tier: replicaset
+  template:
+    metadata:
+      labels:
+        app: demo
+        tier: replicaset
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
