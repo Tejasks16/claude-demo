@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl get:*)",
+      "Bash(aws sts:*)",
+      "Bash(npx --version)",
+      "Read(//c/Users/tejas/.claude/**)",
+      "Bash(npx -y mcp-server-kubernetes --help)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\tejas\\.claude"
+    ]
+  }
+}
