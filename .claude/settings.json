@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aws s3api:*)",
+      "Bash(gh repo:*)",
+      "Bash(winget install:*)",
+      "Bash(choco install:*)",
+      "Bash(scoop install:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh --version)",
+      "Bash(gh auth:*)",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(terraform init:*)",
+      "Bash(gh run:*)",
+      "Bash(curl -s \"https://registry.terraform.io/v1/modules/terraform-aws-modules/eks/aws/versions\")",
+      "Bash(python3 -c \"import sys,json; versions=[v[''''version''''] for v in json.load\\(sys.stdin\\)[''''modules''''][0][''''versions'''']]; print\\(''''\\\\n''''.join\\([v for v in versions if v.startswith\\(''''20.''''\\)]\\)[:500]\\)\")",
+      "Bash(curl -s \"https://registry.terraform.io/v1/modules/terraform-aws-modules/eks/aws\")",
+      "Bash(curl -s \"https://registry.terraform.io/v1/modules/terraform-aws-modules/eks/aws/20.31.6\")",
+      "Bash(terraform validate:*)"
+    ]
+  }
+}
