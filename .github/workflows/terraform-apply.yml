@@ -9,6 +9,12 @@ on:
       - '**.tf'
       - '**.tfvars'
       - '.github/workflows/terraform-apply.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual apply (e.g. recreate infra after destroy)'
+        required: false
+        default: 'Manual trigger'
 
 # Prevent concurrent deployments
 concurrency:
